@@ -1,6 +1,6 @@
 import json
 from vectorless_rag.config import settings
-from vectorless_rag.llm.gemini import generate_json
+from vectorless_rag.llm import generate_json
 
 def compress_tree(nodes: list[dict]) -> list[dict]:
     """

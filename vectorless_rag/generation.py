@@ -1,5 +1,5 @@
 from typing import Generator
-from vectorless_rag.llm.gemini import generate_text_stream
+from vectorless_rag.llm import generate_text_stream
 
 def build_context(nodes: list[dict]) -> str:
     """

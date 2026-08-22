@@ -5,6 +5,7 @@ import pypdf
 from vectorless_rag.ingestion import upload_document, wait_for_processing
 from vectorless_rag.indexing import fetch_tree, format_tree_text
 from vectorless_rag.pipeline import run_rag
+from vectorless_rag.llm import get_active_provider_info
 
 # Must be the first Streamlit command
 st.set_page_config(
@@ -24,8 +25,8 @@ def init_session_state():
 def main():
     init_session_state()
     
-    st.title("🌲 Vectorless RAG Application")
-    st.markdown("A production-ready implementation of tree-based document retrieval and reasoning using Gemini.")
+    st.title("🌲 Vectorless RAG Application Using PageIndex")
+    st.markdown("A production-ready implementation of tree-based document retrieval and reasoning using Open source groq model.")
     
     # Sidebar
     with st.sidebar:
@@ -33,7 +34,10 @@ def main():
         try:
             from vectorless_rag.config import settings
             st.success("✅ Configuration Loaded")
-            st.text(f"Model: {settings.gemini_model}")
+            provider_info = get_active_provider_info()
+            status_emoji = "🟢" if provider_info["status"] == "primary" else "🔵"
+            st.markdown(f"**LLM Provider:** {status_emoji} {provider_info['name']}")
+            st.caption(f"Model: {provider_info['model']}")
         except Exception as e:
             st.error(f"❌ Configuration Error: {e}")
             st.stop()
@@ -61,6 +65,12 @@ def main():
         st.markdown("**OR** Upload New PDF:")
         
         uploaded_file = st.file_uploader("Upload a PDF document", type=["pdf"])
+        
+        if uploaded_file:
+            MAX_MB = settings.max_upload_size_mb
+            if uploaded_file.size > MAX_MB * 1024 * 1024:
+                st.error(f"❌ File too large! Max allowed: {MAX_MB}MB. Your file: {uploaded_file.size / 1e6:.1f}MB")
+                st.stop()
         
         # Add a page range selector for large files
         extract_pages = st.checkbox("Extract a subset of pages (useful for large files/API limits)")
@@ -122,6 +132,7 @@ def main():
                         status.update(label=f"Error: {error_msg}", state="error")
                     
         if st.session_state.doc_id:
+            st.info(f"💾 **Save this ID to resume your session later:** `{st.session_state.doc_id}`")
             st.success(f"Active Document: {st.session_state.doc_id}")
             if st.button("Clear Document"):
                 st.session_state.doc_id = None
